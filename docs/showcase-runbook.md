@@ -394,6 +394,32 @@ taking twenty minutes, the pin predates that fix. `docker compose ... pull openm
 image is local and the outage is just the boot, and take a DB dump before the recreate
 (`scripts/dump_openmrs_seed.sh ~/backups/openmrs-predeploy-<date>.sql.gz`).
 
+**Start from a green `boot-smoke` on the o3 commit the pin points at.** Every push to
+lh-radiology's `o3` branch runs `boot-smoke` after `docker-build` (lh-radiology#88). It boots the
+exact digest `docker-build` just pushed against an empty scratch MariaDB on lh-runner, waits for
+`session` 200 (about 16 minutes, nearly all of it the empty-schema boot), and fails on the same
+things the host test below prints: a `cancelling refresh` or `Context.shutdown` line, a core jar
+it cannot read, or a missing REST, fhir2, radiology or vendor-asset handler. It is proven against
+the failure it exists for: on 2026-09-10 a deliberate build on the drifted `4ca4a5ee` base
+(lh-radiology `7ca6e6b`, reverted in `870e043`) failed it 102 seconds into the boot on
+`cancelling refresh`, with `Context.shutdown` x8 and core 2.8.10-SNAPSHOT. Check it before
+editing the pin in `docker-compose.yml`, from any machine, with no token:
+
+```bash
+SHA=<short-sha>                                  # the o3-<short-sha> tag you are about to pin
+API=https://gitlab.com/api/v4/projects/2690513   # lh-radiology
+P=$(curl -s "$API/repository/commits/$SHA" | python3 -c 'import sys,json; print(json.load(sys.stdin)["last_pipeline"]["id"])')
+curl -s "$API/pipelines/$P/jobs" | python3 -c 'import sys,json; [print(j["name"], j["status"]) for j in json.load(sys.stdin)]'
+```
+
+The gate is a `boot-smoke success` line. A failed job, or no `boot-smoke` line at all, means no
+pin bump. No commit before lh-radiology `7b05e8b` has a passing `boot-smoke`, so the current pin
+`o3-31e7000a` was cleared by the host test alone. If the job ever fails on time alone while its
+log shows a boot still making progress, that is contention on the shared runner, not drift: raise
+`BOOT_TIMEOUT` in lh-radiology's `.gitlab-ci.yml` rather than distrusting the image. `boot-smoke`
+does not replace the host test below. An empty database proves the image starts; the host test
+proves it starts on the demo's own rows and rebuilds the Lucene index.
+
 **Boot-test the exact tag before the recreate.** Added after 2026-09-03, when `o3-074c9b8d`
 (built on a base tag that had moved on Docker Hub) deployed as a bare core: Tomcat answered
 `/openmrs/` 200 while REST, fhir2 and the radiology module had no handlers, and the host was

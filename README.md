@@ -13,7 +13,7 @@ the FHIR R4 data API, **Orthanc** PACS, and **OHIF** viewer.
 
 ## Status
 
-Current release: **v0.3.0** (M0–M3 complete).
+Current release: **v0.4.0** (M0–M4 complete).
 
 - **M0** — contract freeze + runnable mock harness.
 - **M1** — walking skeleton live: agents on Temporal, Orthanc arrival starts a workflow,
@@ -22,15 +22,16 @@ Current release: **v0.3.0** (M0–M3 complete).
   notifications, pre-sign impression assist, verification rule library, opt-in OTel tracing.
 - **M3** (v0.3.0) — interpretation-registry selection hardening and the guarded fhir2
   write path for the pre-sign draft.
-- **M4** (in progress) — the **MIMIC-CXR radiologist showcase**: a hosted demo running a
-  ~100-study cohort through the full pipeline. Day-of script:
+- **M4** (v0.4.0) — the **MIMIC-CXR radiologist showcase**: a hosted demo running a
+  ~100-study cohort through the full pipeline, from real CAD and LLM-authored pre-sign
+  impressions to a real RIS sign and a referring physician's acknowledgement. Day-of script:
   [`docs/showcase-runbook.md`](docs/showcase-runbook.md).
-- **M5** (next) — EMBED mammography flagship
+- **M5** (current) — EMBED mammography flagship
   ([`docs/embed-mammography-mapping.md`](docs/embed-mammography-mapping.md)).
 
-One real CAD tool (a pneumothorax classifier) is wired behind the Interpretation tool
-registry; every other model is still a validated stub. The GitLab issue backlog is the
-authoritative plan.
+Four real CAD heads for chest radiographs (pneumothorax, pleural effusion, consolidation,
+pulmonary edema) are wired behind the Interpretation tool registry; every other model is still a
+validated stub. The GitLab issue backlog is the authoritative plan.
 
 ## Quickstart
 
@@ -98,7 +99,7 @@ BibTeX for this repo (machine-readable copy: [`CITATION.cff`](./CITATION.cff)):
              Purkayastha, Saptarshi},
   title   = {LH-Radiology Multi-Agent System},
   year    = {2026},
-  version = {0.3.0},
+  version = {0.4.0},
   url     = {https://gitlab.com/librehealth/radiology/lh-radiology-agents}
 }
 ```

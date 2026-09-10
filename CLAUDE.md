@@ -91,7 +91,7 @@ uvicorn orchestrator.ingress:app --port 8090
 ```
 
 ## Status
-**M3 complete (v0.3.0, released 2026-07-15); milestones M0-M3 closed.** M0 froze the contracts and
+**M4 complete (v0.4.0, released 2026-09-11); milestones M0-M4 closed.** M0 froze the contracts and
 harness; M1 shipped the walking skeleton (agents on Temporal, Orthanc->start, RIS polling->report
 pipeline); M2 (v0.2.0) shipped the Worklist API + OHIF data source, tier-dependent sign-off
 escalation, A2A push-notifications, pre-sign impression assist, the verification rule library with
@@ -99,20 +99,20 @@ report-body parsing, and opt-in OpenTelemetry tracing. M3 (v0.3.0) hardened inte
 selection (real protocol aliases, ICD-10 family prefixes, bone-adjacency exclusions) and the fhir2
 write path: the dedicated pre-sign draft concept (#55) is provisioned into o3 at stack startup by
 `docker/openmrs/bootstrap_presign_concept.py`, and the plaintext-write transport guard is merged
-(!57). **M4 (in progress) is the MIMIC-CXR radiologist showcase:** a hosted demo where radiologists
-and referring physicians work a ~100-study MIMIC-CXR cohort through the full pipeline. Landed:
-the cohort ETL (#68 core slices), the Communications agent as a compose service (#69), two real
-CAD heads behind the pluggable `_PIXEL_TOOL_SPECS` table (`pneumothorax-detect` #71 and
-`effusion-detect`, the first non-critical one; every other model stays stubbed behind the
-Interpretation tool registry), LLM-authored impression prose on the #77 path, the
-`ris-sign-bridge` workaround for the o3 module's broken sign emit (d210810), TLS and
-least-privilege hosting (#75), CI-published images with pull-based host deploys (#97, #98), and
-the referring-physician role bootstrap (#85). The whole loop is proven live on the demo host:
-CAD to pre-sign draft to a real RIS sign to verification to ARCHIVED, then restaged.
-**The one remaining release gate is #76**, the run-book rehearsals (two seeded dry runs plus one
-live-signing dry run). M4 then ships as **v0.4.0**. The rest of the open M4 backlog (#27, #64,
-#80, #105, #115, #117, #118) is real work but does not gate the demo. Note that many M4-era
-issues (#82-#116) were filed with no milestone, so the M4 milestone view is not the full history.
-**M5 is the EMBED mammography flagship** after the demo (#31; mapping in
-`docs/embed-mammography-mapping.md`). Search `TODO(M3)` for open code markers; the full plan is
-the GitLab issue backlog.
+(!57). **M4 (v0.4.0) shipped the MIMIC-CXR radiologist showcase:** a hosted demo where radiologists
+and referring physicians work a ~100-study MIMIC-CXR cohort through the full pipeline. It covers
+the cohort ETL (#68); four real CAD heads behind the pluggable `_PIXEL_TOOL_SPECS` table
+(`pneumothorax-detect` #71, `effusion-detect`, `consolidation-detect`, `edema-detect`; every other
+model stays stubbed behind the Interpretation tool registry); LLM-authored impression prose with
+the deterministic template as fallback (#77); the Communications agent as a compose service (#69)
+with referring-physician delivery and an identity-bound acknowledgement (#79, #85, #126, #127,
+#128, #130); TLS and least-privilege hosting (#75); and CI-published images with pull-based host
+deploys (#97, #98). A real RIS sign reaches the pipeline through `ris-sign-bridge` (d210810),
+because the o3 module's own emit still fails (#82); that emit carries `basedOn` since lh-radiology
+`2e107c00`, ready for the repair. OpenMRS runs `o3-31e7000a` on a digest-pinned base, and a pin
+bump waits for a green `boot-smoke` on the o3 commit behind the tag (lh-radiology#88, run-book 6a).
+The whole loop is proven live on the demo host and rehearsed (#76): CAD to pre-sign draft to a real
+RIS sign to verification to ARCHIVED, then restaged.
+**M5 (current) is the EMBED mammography flagship** (#31; mapping in
+`docs/embed-mammography-mapping.md`), with real CAD tools beyond the four chest heads (#27).
+Search `TODO(M3)` for open code markers; the full plan is the GitLab issue backlog.

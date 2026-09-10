@@ -24,8 +24,11 @@ o3), fired when a report is signed (`saveRadiologyReport` sets status COMPLETED)
 stack that emit never runs** (#82: `ServiceNotFoundException` on `FhirDiagnosticReportService`), so
 the real producer today is `scripts/mimic/ris_sign_bridge.py`, which polls the RIS
 `radiology_report` table for COMPLETED rows and projects each one into that study's seeded
-DiagnosticReport. The table below is the intended mapping; the section after it records where the
-bridge's output differs, measured on the demo host.
+DiagnosticReport. The emit itself has carried `basedOn` since lh-radiology `2e107c00` (the producer
+half of lh-radiology!88, unit-tested), so it is join-correct the day #82 is repaired. Until then the
+bridge stays the only producer; running both would put two `final` reports on one sign. The table
+below is the intended mapping; the section after it records where the bridge's output differs,
+measured on the demo host.
 
 | RIS `RadiologyReport` field | fhir2 `DiagnosticReport` field | pipeline consumer |
 |---|---|---|
@@ -37,23 +40,23 @@ bridge's output differs, measured on the demo host.
 | **the order** | **`basedOn = ServiceRequest/<order uuid>`** | **poller `serviceRequestRef` join** |
 | (n/a) | `identifier` (ACSN) | poller `accessionNumber` join |
 
-## What the deployed stack actually produces (demo host, 2026-08-07)
+## What the deployed stack actually produces (demo host)
 
-Measured on a real human sign: study s56373033, signed in the RIS by Radiologist One, bridged four
-seconds later. Three fields do not match the table above, so write consumers against this section
-rather than against the intended mapping.
+First measured on a real human sign on 2026-08-07: study s56373033, signed in the RIS by Radiologist
+One, bridged four seconds later. Two bridge fixes since then brought `conclusion` (#113) and
+`issued` (#110) in line with the intended mapping, so one field still differs from the table above.
+Write consumers against this section rather than against the intended mapping.
 
 | field | intended | what actually lands | consequence |
 |---|---|---|---|
 | `status` | `final` | as intended | the gate releases |
 | `basedOn` | `ServiceRequest/<order uuid>` | as intended | the join works, and it is the only key that does |
-| `conclusion` | the report body | the body **wrapped by the RIS editor**, e.g. `'<p>FINDINGS: ... IMPRESSION: ...</p>'` | verification still parses it, but a chart view or a whole-narrative comparison gets literal markup |
-| `issued` | the report date, read as poller `signedAt` | **unchanged from the seed**: `2026-07-24` on a report signed `2026-08-07` | the bridge flips an existing seeded report and never restamps `issued`, so any turnaround or time-in-state metric reads the seed date |
+| `conclusion` | the report body | the body as plain text: the bridge strips the RIS editor's markup to a fixpoint (#113), and a body over fhir2's 1024-character cap is clamped behind an in-band truncation marker (#91, #105) | verification parses it; the full text stays in the RIS |
+| `issued` | the report date, read as poller `signedAt` | the sign instant (#110, verified by readback; before the fix a report signed `2026-08-07` read the seed date `2026-07-24`) | turnaround and time-in-state metrics read the real sign time |
 | `performer` | the signer as `Practitioner/<provider uuid>` (#93) | **dropped**, reads back as absent | fhir2 accepts and silently discards `performer` and `resultsInterpreter`, the same accepts-and-drops family as the `identifier` case above. The RIS stays the attribution record and the fhir2 copy names no radiologist |
 
-The `issued` and `performer` gaps belong to the bridge-as-producer path, so repairing the module's
-own emit closes both. The `conclusion` markup comes from the RIS editor and would survive that
-repair.
+The `performer` gap is fhir2's own accepts-and-drops behaviour, so it would survive a repair of the
+module's emit too.
 
 ## What was broken (verified live against fhir2 4.1.0, o3 stack, 2026-07-15)
 
@@ -75,7 +78,9 @@ because it feeds synthetic bundles that already carry `basedOn`/`ACSN`.
 
 - **Producer** (`emitFhirDiagnosticReport`, sibling repo): add
   `diagnosticReport.addBasedOn(new Reference("ServiceRequest/" + radiologyOrder.getUuid()))`.
-  Confirmed live that `basedOn` round-trips on this fhir2's DiagnosticReport body.
+  Confirmed live that `basedOn` round-trips on this fhir2's DiagnosticReport body. Landed on
+  lh-radiology `o3` as `2e107c00` (2026-09-10) with a unit test that fails without it; the emit it
+  lives in still fails on this build (#82), so today the join key reaches fhir2 via the bridge.
 - **Ingest** (`orchestrator/ingress.py` + `radagent_common/openmrs_rest.py`): resolve the accession
   through the radiology module's own REST search handler,
   `GET /ws/rest/v1/radiologyorder?accessionNumber=<acc>` (fhir2 cannot). It returns the order uuid,

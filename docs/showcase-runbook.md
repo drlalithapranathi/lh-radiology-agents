@@ -17,7 +17,7 @@ origin the #75 Caddy overlay serves. Nothing else is reachable off-box.
 | RIS / OpenMRS login | `https://demo.example.org/openmrs/login.htm` | radiologist's own OpenMRS account |
 | RIS order page (read-only) | `https://demo.example.org/openmrs/module/radiology/radiologyOrder.form?orderId=<uuid>` — reached via the viewer's **Report this study** action. Shows the order only: despite what this row used to claim, the pre-sign draft is **not** rendered here (verified 2026-08-20), so arc 2's "look, the AI already drafted" beat has to happen on the report form. It carries **no claim button** on this build (#109), and its "View Study" link points at a `localhost:8081` Weasis URL that is dead from any reviewer's browser: ignore it, the viewer is the `/read` route | OpenMRS session |
 | RIS report form (claim, author, sign) | `…/radiologyReport.form?orderId=<uuid>` **is the claim**, and since o3 pin `o3-31e7000a` (#120) it is safe on every study: with no report yet it creates the draft and redirects to `?reportId=<n>`; with one already there (the AI pre-sign draft on ~45 of the cohort, or a radiologist's own) it lands on that report instead of the `cannot.create.already.claimed` crash page. Radiology → Reports lists every draft too (interpreter column blank until claimed; a draft has no report date, so the date filter never hides one), and each row's eye icon opens the form. Verify both before the session, see §1.7 | OpenMRS session |
-| Patient chart (referring MD) | `https://demo.example.org/openmrs` → find patient → chart shows the **AI critical result notification** entry | physician's own OpenMRS account |
+| Patient chart (referring MD) | `https://demo.example.org/openmrs` → find patient → **Overview** tab: the **AI critical result notifications** box at the top lists every notification for the patient, newest first, with an **Acknowledge** link on each one minted under `/openmrs/ack/` (#136). It replaces the Most Recent Observations entry, which linked to the observation edit form, not to the ack page | physician's own OpenMRS account |
 | Critical-result ack (phone) | `https://demo.example.org/openmrs/ack/<taskId>?sig=…` — the signed link inside the chart notification. Under `/openmrs` since #126, which is what lets it reuse the physician's session; links minted before that carry `/reading-api/ack/…` and still work, on the Basic path | physician's OpenMRS account (live session, else an HTTP Basic prompt) |
 | Sign-off override (phone) | `https://demo.example.org/ingress/signoff/<workflowId>/override` — the link inside the escalation page | `SIGNOFF_OVERRIDE_TOKEN` |
 | Jaeger (choreography visual) | presenter laptop: `ssh -L 16686:127.0.0.1:16686 demo@<host>` → `http://localhost:16686` | SSH only (loopback-bound on the host) |
@@ -186,14 +186,16 @@ origin the #75 Caddy overlay serves. Nothing else is reachable off-box.
    physician): the **AI critical result notifications** box at the top of the Overview tab
    (o3 pin `o3-048ef7d6`, lh-radiology!100, #136) lists the entry — finding label + accession +
    ack task, with its date and an **Acknowledge** link — never the narrative. The box lists every
-   notification for the patient, newest first. Until the follow-up drops the concept from
-   `dashboard.overview.showConcepts`, the Most Recent Observations widget further down still
-   shows the latest entry as text wrapped in the observation edit link: that one is the #136
-   login loop, so click only the box.
+   notification for the patient, newest first. The Most Recent Observations widget no longer
+   lists it: `presign-concept-bootstrap` takes the concept off `dashboard.overview.showConcepts`,
+   because that widget wrapped the entry in the observation edit link (the #136 login loop).
+   OpenMRS holds that setting in memory, so the removal shows only after the next openmrs
+   restart. If the old entry still shows further down, the bootstrap or that restart has not
+   happened on this host yet: click only the box.
 6. **Phone on camera:** tap **Acknowledge** in the box. The link is
    `https://demo.example.org/openmrs/ack/<taskId>?sig=…`; the box only ever links an https URL
-   on this host under `/openmrs/ack/`, so an old `/reading-api/ack/` entry shows as text with no
-   link. Two taps, by design (!114):
+   on this host under `/openmrs/ack/`, so an old `/reading-api/ack/` entry is listed with no
+   **Acknowledge** link (the box never prints the URL itself). Two taps, by design (!114):
    the link opens a **confirmation page** naming who the acknowledgement will be attributed
    to, and only the **Acknowledge** button on it attests. Opening the link never acknowledges
    anything, so a preloading browser, a restored tab or a scanner cannot attest on the

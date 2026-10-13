@@ -143,12 +143,17 @@ _CONCEPTS = [
 RADIOLOGY_CONCEPT_CLASSES_GP = "radiology.radiologyConceptClasses"
 
 # The legacy patient dashboard's Overview tab renders the latest obs for the concepts listed
-# here, and nothing else surfaces a bare Observation: the dashboard's other widgets are
-# encounter-driven. Ships unset on this build, which is why the critical-result notification
-# was written correctly, returned by fhir2, and invisible to the physician it was written for
-# (#123, found in the #76 arc 2 rehearsal when a referring physician opened the chart and
-# found nothing). The ack link lives inside that entry, so the closing loop of the critical
-# result pathway was unreachable without someone passing the link along out of band.
+# here. #123 registered the critical-result notification on it, because nothing else surfaced a
+# bare Observation and the physician it was written for saw an empty chart.
+#
+# That widget is the wrong surface for this entry, and #136 takes the concept back off it. It
+# wraps the whole value in a link to the observation EDIT form, so the ack link inside was never
+# clickable and a referring physician who clicked it looped on the login page. It renders one
+# entry per patient, so a second critical result showed nowhere. And it offers a "New" control
+# that saves a hand-typed observation under the AI concept. The notification is listed instead
+# by the radiology module's own box at the top of the Overview tab (legacyui's overviewBox
+# extension point), which is why the o3 pin and this removal move together (see
+# test_notification_overview_gp.py).
 OVERVIEW_SHOW_CONCEPTS_GP = "dashboard.overview.showConcepts"
 RADIOLOGY_PROCEDURE_CLASS_NAME = "Radiology/Imaging Procedure"
 
@@ -326,19 +331,25 @@ def _configure_radiology_concept_classes(cursor) -> bool:
     return True
 
 
-def _show_notification_on_the_patient_overview(cursor) -> bool:
-    """Add the critical-result notification concept to `dashboard.overview.showConcepts` (#123).
+def _take_notification_off_the_patient_overview(cursor) -> bool:
+    """Remove the critical-result notification concept from `dashboard.overview.showConcepts`
+    (#136), undoing the registration #123 added.
 
-    APPENDS rather than replaces, unlike `_configure_radiology_concept_classes` above. That GP is
-    a single value where an operator's choice is the answer; this one is a LIST, so "already set"
-    is not a reason to skip -- it would leave the notification invisible on exactly the
-    deployments that use the overview for something else. Ours is added once and any existing
-    entries are preserved in order.
+    An active removal, not just a stopped registration: every stack that has run the #123
+    bootstrap already lists the concept, and the GP lives in the database, so it survives image
+    and code updates. Leaving it would keep the edit link, the one-entry limit and the "New"
+    control on exactly the deployments that need them gone.
 
-    Never a hard failure: a chart that does not surface the notification is a real problem, but it
-    is not a reason to fail stack startup and take the whole demo with it. The concept row itself
-    is provisioned earlier in this same run, so a miss here means the GP is absent (module//core
-    version without it), which is worth a warning and nothing more.
+    REMOVES ONE ENTRY rather than clearing the GP. It is a LIST an operator may use for their own
+    concepts, so every other entry is preserved in order. With ours the only entry the value
+    becomes empty, which is the shipped state and hides the widget.
+
+    Never a hard failure, same as the registration it replaces: a leftover widget entry is a real
+    problem, but it is not a reason to fail stack startup and take the whole demo with it.
+
+    The write is plain SQL, and a running OpenMRS keeps the GP in memory: the widget keeps the
+    entry until openmrs restarts (seen on the dev stack 2026-10-20: still there after the run,
+    gone after a restart).
     """
     cursor.execute(
         "SELECT concept_id FROM concept WHERE uuid = %s AND retired = 0 LIMIT 1",
@@ -346,7 +357,7 @@ def _show_notification_on_the_patient_overview(cursor) -> bool:
     )
     row = cursor.fetchone()
     if row is None:
-        log.warning("notification concept %s not found; cannot add it to %s.",
+        log.warning("notification concept %s not found; cannot check %s for it.",
                     NOTIFICATION_CONCEPT_UUID, OVERVIEW_SHOW_CONCEPTS_GP)
         return True
     concept_id = str(row[0])
@@ -357,25 +368,24 @@ def _show_notification_on_the_patient_overview(cursor) -> bool:
     )
     row = cursor.fetchone()
     if row is None:
-        log.warning("%s is not registered on this OpenMRS; the critical-result notification "
-                    "will not appear on the patient overview.", OVERVIEW_SHOW_CONCEPTS_GP)
+        log.info("%s is not registered on this OpenMRS; nothing to remove.",
+                 OVERVIEW_SHOW_CONCEPTS_GP)
         return True
 
     current = (row[0] or "").strip()
     entries = [e.strip() for e in current.split(",") if e.strip()]
-    if concept_id in entries:
-        log.info("%s already lists the notification concept (%s); nothing to do.",
+    if concept_id not in entries:
+        log.info("%s does not list the notification concept (%s); nothing to do.",
                  OVERVIEW_SHOW_CONCEPTS_GP, concept_id)
         return True
 
-    entries.append(concept_id)
-    value = ",".join(entries)
+    value = ",".join(e for e in entries if e != concept_id)
     cursor.execute(
         "UPDATE global_property SET property_value = %s WHERE property = %s",
         (value, OVERVIEW_SHOW_CONCEPTS_GP),
     )
-    log.info("Set %s = %r (added the critical-result notification concept %s).",
-             OVERVIEW_SHOW_CONCEPTS_GP, value, concept_id)
+    log.info("Set %s = %r (removed the critical-result notification concept %s; the radiology module's "
+             "Overview box lists it now).", OVERVIEW_SHOW_CONCEPTS_GP, value, concept_id)
     return True
 
 
@@ -402,7 +412,7 @@ def bootstrap(
                 return 2
 
             # Runs AFTER the concepts exist: it looks the notification concept up by uuid.
-            _show_notification_on_the_patient_overview(cursor)
+            _take_notification_off_the_patient_overview(cursor)
 
             conn.commit()
             return 0

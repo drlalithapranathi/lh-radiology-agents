@@ -85,7 +85,20 @@ services:
     #   rolled back (2026-09-03). lh-radiology!99 pins the base by digest. RULE since then: a pin
     #   bump waits for a green `boot-smoke` on the o3 commit behind the tag (lh-radiology#88), then
     #   for `scripts/o3_boot_test.sh` against the exact tag on the host (run-book 6a).
-    image: registry.gitlab.com/librehealth/radiology/lh-radiology/o3:o3-31e7000a
+    # * o3-048ef7d6 (lh-radiology!100, #136): the patient dashboard's Overview tab gets its own
+    #   read-only "AI critical result notifications" box (a BoxExt on
+    #   org.openmrs.patientDashboard.overviewBox, gated on Get Observations). It lists every
+    #   notification for the patient, newest first with its date, the whole value escaped, and
+    #   only the `ack link:` segment as a real link, and only when that is an https URL on this
+    #   host under the chart's own /openmrs/ack/<task id>. Older /reading-api/ack/ links stay
+    #   text: that route never carries the OpenMRS session cookie, so a click there falls back to
+    #   HTTP Basic and the browser's stored identity (#126). Until the agents follow-up removes the
+    #   concept from dashboard.overview.showConcepts, the legacy Most Recent Observations widget
+    #   still shows the latest entry beneath the box, wrapped in the observation edit link with a
+    #   "New" control (the #136 login loop): the box is the surface to click. First pin to go
+    #   through the boot-smoke gate (lh-radiology pipeline 2968413834). Same recreate and Lucene
+    #   reminder as above.
+    image: registry.gitlab.com/librehealth/radiology/lh-radiology/o3:o3-048ef7d6
     pull_policy: missing                  # `up` pulls the published image; build only on `compose build`
     build:
       context: ../lh-radiology            # sibling checkout of lh-radiology (o3 branch)

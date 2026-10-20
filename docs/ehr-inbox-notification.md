@@ -25,6 +25,21 @@ A pointer, not a narrative: `<finding label> | accession <ACSN> | ack task <ledg
 label is the classifier's one-liner from `criticalFlags`; the report text stays in the RIS and
 the communication record stays in the ledger.
 
+## Where the entry renders
+
+At the top of the patient dashboard's **Overview** tab, in the radiology module's *AI critical
+result notifications* box (#136, legacyui's `org.openmrs.patientDashboard.overviewBox` extension
+point, o3 `o3-048ef7d6` onward). The box lists every notification for the patient, newest first,
+read-only. The ack link becomes an **Acknowledge** link only when it is an https URL on the
+chart's own host under `/openmrs/ack/`; the box never prints the URL itself, so an older
+`/reading-api/ack/` entry is listed without one.
+
+It used to be registered on `dashboard.overview.showConcepts` (#123). That widget links the whole
+value to the observation edit form, shows only the latest entry per patient and offers a "New"
+control on the concept, so `bootstrap_presign_concept.py` now takes the concept back off that
+list. The removal needs an o3 image that has the box, and `test_notification_overview_gp.py`
+holds the two together.
+
 ## The #26-class conditions, as enforced
 
 - **Gated inert.** `EHR_INBOX_WRITE_ENABLED` defaults off; with it unset the write path performs

@@ -92,12 +92,13 @@ services:
     #   only the `ack link:` segment as a real link, and only when that is an https URL on this
     #   host under the chart's own /openmrs/ack/<task id>. Older /reading-api/ack/ links stay
     #   text: that route never carries the OpenMRS session cookie, so a click there falls back to
-    #   HTTP Basic and the browser's stored identity (#126). Until the agents follow-up removes the
-    #   concept from dashboard.overview.showConcepts, the legacy Most Recent Observations widget
-    #   still shows the latest entry beneath the box, wrapped in the observation edit link with a
-    #   "New" control (the #136 login loop): the box is the surface to click. First pin to go
-    #   through the boot-smoke gate (lh-radiology pipeline 2968413834). Same recreate and Lucene
-    #   reminder as above.
+    #   HTTP Basic and the browser's stored identity (#126). The box replaces the legacy Most Recent
+    #   Observations entry, which wrapped the value in the observation edit link with a "New"
+    #   control (the #136 login loop): since !204, presign-concept-bootstrap takes the concept off
+    #   dashboard.overview.showConcepts, and test_notification_overview_gp.py fails any pin older
+    #   than this one, because without the box that removal would hide every notification. First
+    #   pin to go through the boot-smoke gate (lh-radiology pipeline 2968413834). Same recreate and
+    #   Lucene reminder as above.
     image: registry.gitlab.com/librehealth/radiology/lh-radiology/o3:o3-048ef7d6
     pull_policy: missing                  # `up` pulls the published image; build only on `compose build`
     build:

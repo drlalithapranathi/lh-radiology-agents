@@ -91,7 +91,7 @@ uvicorn orchestrator.ingress:app --port 8090
 ```
 
 ## Status
-**M4 complete (v0.4.0, released 2026-09-11); milestones M0-M4 closed.** M0 froze the contracts and
+**M4 complete (v0.4.0, released 2026-09-11; v0.4.1 maintenance release 2026-10-21); milestones M0-M4 closed.** M0 froze the contracts and
 harness; M1 shipped the walking skeleton (agents on Temporal, Orthanc->start, RIS polling->report
 pipeline); M2 (v0.2.0) shipped the Worklist API + OHIF data source, tier-dependent sign-off
 escalation, A2A push-notifications, pre-sign impression assist, the verification rule library with
@@ -111,7 +111,9 @@ deploys (#97, #98). A real RIS sign reaches the pipeline through `ris-sign-bridg
 because the o3 module's own emit still fails (#82); that emit carries `basedOn` since lh-radiology
 `2e107c00`, ready for the repair. OpenMRS runs `o3-048ef7d6` (lh-radiology!100: the Overview-tab
 critical-results box with a real ack link, #136) on a digest-pinned base, and a pin bump waits for
-a green `boot-smoke` on the o3 commit behind the tag (lh-radiology#88, run-book 6a).
+a green `boot-smoke` on the o3 commit behind the tag (lh-radiology#88, run-book 6a). v0.4.1 pins
+that image, takes the notification concept off the legacy overview widget (#136, !204) and retires
+the Caddy and OHIF vendor-asset workarounds (!206).
 The whole loop is proven live on the demo host and rehearsed (#76): CAD to pre-sign draft to a real
 RIS sign to verification to ARCHIVED, then restaged.
 **M5 (current) is the EMBED mammography flagship** (#31; mapping in

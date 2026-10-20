@@ -13,7 +13,7 @@ the FHIR R4 data API, **Orthanc** PACS, and **OHIF** viewer.
 
 ## Status
 
-Current release: **v0.4.0** (M0–M4 complete).
+Current release: **v0.4.1** (M0–M4 complete; v0.4.1 is the post-M4 maintenance release).
 
 - **M0** — contract freeze + runnable mock harness.
 - **M1** — walking skeleton live: agents on Temporal, Orthanc arrival starts a workflow,
@@ -25,7 +25,10 @@ Current release: **v0.4.0** (M0–M4 complete).
 - **M4** (v0.4.0) — the **MIMIC-CXR radiologist showcase**: a hosted demo running a
   ~100-study cohort through the full pipeline, from real CAD and LLM-authored pre-sign
   impressions to a real RIS sign and a referring physician's acknowledgement. Day-of script:
-  [`docs/showcase-runbook.md`](docs/showcase-runbook.md).
+  [`docs/showcase-runbook.md`](docs/showcase-runbook.md). **v0.4.1** (2026-10-21) makes the
+  critical-result notification clickable on the patient chart (a read-only box on the Overview
+  tab, o3 pin `o3-048ef7d6`, #136) and retires the vendor-asset workarounds the omod no longer
+  needs (#115).
 - **M5** (current) — EMBED mammography flagship
   ([`docs/embed-mammography-mapping.md`](docs/embed-mammography-mapping.md)).
 
@@ -99,7 +102,7 @@ BibTeX for this repo (machine-readable copy: [`CITATION.cff`](./CITATION.cff)):
              Purkayastha, Saptarshi},
   title   = {LH-Radiology Multi-Agent System},
   year    = {2026},
-  version = {0.4.0},
+  version = {0.4.1},
   url     = {https://gitlab.com/librehealth/radiology/lh-radiology-agents}
 }
 ```

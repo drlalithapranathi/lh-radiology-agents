@@ -75,8 +75,9 @@ services:
     #   draft, or a radiologist's) instead of throwing `cannot.create.already.claimed`, and the
     #   Reports tab lists drafts: a draft has no report date, and the tab's date filter used to
     #   exclude NULL, which is why it showed 0 of 0 (not the NULL interpreter #120 first blamed).
-    #   The omod also ships its own vendor assets now, so the Caddy and OHIF vendor workarounds
-    #   are redundant on this pin and can be retired once it is deployed. Same recreate and
+    #   The omod also ships its own vendor assets now; the Caddy and OHIF vendor workarounds
+    #   that covered for earlier builds are retired (scripts/o3_boot_test.sh probes the omod's
+    #   copies before every pin bump). Same recreate and
     #   Lucene reminder as above.
     #   Its predecessor `o3-074c9b8d` carried the same two omod fixes and could not boot: the
     #   sibling Dockerfile's base tag `3.7.x` had moved on Docker Hub (core 2.8.10-SNAPSHOT), the

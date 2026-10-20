@@ -45,7 +45,6 @@ services:
       DEMO_PROXY_PASS_HASH: ${DEMO_PROXY_PASS_HASH:-$$2a$$14$$/PRg2Yczxuv8H9vj7zIc1ehMaac9ic3mDkS5z2MYojV1LG0JD.tjq}
     volumes:
       - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./docker/caddy/radiology-vendor:/srv/radiology-vendor:ro
       - caddy-data:/data
       - caddy-config:/config
     # NOT the orchestrator: the agents depend on caddy (for the CA root their SSL_CERT_FILE

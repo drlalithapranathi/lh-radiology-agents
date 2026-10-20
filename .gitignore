@@ -26,8 +26,6 @@ manifest.json
 SHA256SUMS
 SHARE.json
 
-# Fetched third-party RIS vendor assets (docker/caddy/fetch-radiology-vendor.sh), not source
-docker/caddy/radiology-vendor/
 
 # Local Claude Code working directory: editor settings and local scratch, never source.
 # Ignored wholesale so nothing left in it can be swept into a commit.

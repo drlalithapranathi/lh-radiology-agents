@@ -17,19 +17,14 @@
 #                        override it on a reachable host.
 
 (showcase_routes) {
-	# The radiology module's vendor assets (jquery, datatables, moment, ...) are MISSING from
-	# this omod build -- the module 404s them and every RIS dashboard page dies on
-	# "jQuery is not defined" (found in the M4 recording dry run). Until the omod bundles them
-	# again, serve pinned copies from the overlay (docker/caddy/radiology-vendor, mounted at
-	# /srv/radiology-vendor). Must precede the /openmrs/* handle.
-	handle /openmrs/moduleResources/radiology/vendor/* {
-		uri strip_prefix /openmrs/moduleResources/radiology/vendor
-		root * /srv/radiology-vendor
-		file_server
-	}
+	# The radiology module's vendor assets (jquery, datatables, moment, tinymce, ...) come from
+	# the omod itself since o3 pin `o3-31e7000a` (lh-radiology!98, #115), through the /openmrs/*
+	# handle below. The overlay used to serve pinned copies from docker/caddy/radiology-vendor
+	# ahead of that handle because earlier omod builds 404ed them; that override is retired,
+	# and scripts/o3_boot_test.sh probes the omod's own copies before any pin bump.
 
 	# Critical-result ack surface (#79), served UNDER /openmrs on purpose (#126). Must precede
-	# the /openmrs/* handle, same as the vendor override above.
+	# the /openmrs/* handle.
 	#
 	# The path is the whole point. OpenMRS issues `JSESSIONID` with `Path=/openmrs; HttpOnly`,
 	# so a browser sends that cookie to /openmrs/ack/... and NOT to the /reading-api/ack/...

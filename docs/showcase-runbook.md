@@ -20,7 +20,7 @@ origin the #75 Caddy overlay serves. Nothing else is reachable off-box.
 | Patient chart (referring MD) | `https://demo.example.org/openmrs` → find patient → **Overview** tab: the **AI critical result notifications** box at the top lists every notification for the patient, newest first, with an **Acknowledge** link on each one minted under `/openmrs/ack/` (#136). It replaces the Most Recent Observations entry, which linked to the observation edit form, not to the ack page | physician's own OpenMRS account |
 | Critical-result ack (phone) | `https://demo.example.org/openmrs/ack/<taskId>?sig=…` — the signed link inside the chart notification. Under `/openmrs` since #126, which is what lets it reuse the physician's session; links minted before that carry `/reading-api/ack/…` and still work, on the Basic path | physician's OpenMRS account (live session, else an HTTP Basic prompt) |
 | Sign-off override (phone) | `https://demo.example.org/ingress/signoff/<workflowId>/override` — the link inside the escalation page | `SIGNOFF_OVERRIDE_TOKEN` |
-| Jaeger (choreography visual) | presenter laptop: `ssh -L 16686:127.0.0.1:16686 demo@<host>` → `http://localhost:16686` | SSH only (loopback-bound on the host) |
+| Jaeger (choreography visual) | presenter laptop: `ssh -L 16686:127.0.0.1:16686 <host account>@<host>` (the account that owns the checkout; there is no `demo` login) → `http://localhost:16686` | SSH only (loopback-bound on the host) |
 | Temporal UI (backstage only) | tunnel `8088` the same way → `http://localhost:8088` | SSH only |
 | Restage/seeder commands | SSH shell on the demo host, repo root | host account |
 
@@ -72,21 +72,15 @@ origin the #75 Caddy overlay serves. Nothing else is reachable off-box.
    (`role 'Radiology: Referring physician': N granted, ...`).
 5. OpenMRS seed captured once (`scripts/dump_openmrs_seed.sh`) so recovery never costs the
    16-minute boot.
-5a. Radiology-module vendor assets are baked into the OHIF image at build time (#115): the
-   omod ships without them and every RIS page dies on "jQuery is not defined" without a
-   workaround. The plain stack now serves them from an nginx `location` in the OHIF image
-   (`docker/ohif/default.conf` + the `radiology-vendor-fetch` stage in
-   `integrations/ohif-extension/Dockerfile`, using the same `docker/caddy/fetch-radiology-vendor.sh`
-   the #75 hosted overlay uses so both pin identical versions). No host-side fetch is required.
-   **Reach the RIS through the OHIF origin for this to work**: on the plain stack that is
-   `http://localhost:3000/openmrs/...`, because the nginx `location` serving the assets lives in
-   the OHIF image. `docker-compose.yml` also publishes OpenMRS directly on `8080:8080`, and that
-   port is served by OpenMRS itself, so vendor URLs still 404 there and the report form is still
-   dead. If a form looks broken on a local stack, check which port you are on before anything
-   else. The #75 overlay's Caddy handle still serves them for the hosted showcase, where
-   everything is already same-origin behind Caddy.
-   Since o3 pin `o3-31e7000a` the omod ships `src/main/webapp/resources/vendor/**` itself (#115,
-   lh-radiology!98), so on that pin both handles are redundant; retiring them is a follow-up.
+5a. Radiology-module vendor assets (jQuery, moment, DataTables, TinyMCE, Font Awesome, the
+   date-range picker) ship inside the omod since o3 pin `o3-31e7000a` (#115, lh-radiology!98),
+   under `moduleResources/radiology/vendor/`, so every RIS page gets them from OpenMRS itself on
+   any port and any origin. The two workarounds that covered for earlier builds, an nginx
+   `location` plus a fetch stage in the OHIF image and the #75 overlay's Caddy handle over
+   `docker/caddy/radiology-vendor`, are retired. `scripts/o3_boot_test.sh` probes the omod's own
+   copies before every pin bump, which is the guard against a build that drops them again. If a
+   report form dies on "jQuery is not defined", the pin is older than `o3-31e7000a` or the boot
+   test was skipped.
 5b. `ris-sign-bridge` is up (`docker compose ps ris-sign-bridge`): the module's sign emit is
    broken (ServiceNotFoundException, swallowed), so without the bridge a signed report never
    reaches fhir2/the poller and every read parks at the gate (workaround for #70; real fix o3).

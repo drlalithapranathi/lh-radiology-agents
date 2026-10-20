@@ -109,8 +109,9 @@ with referring-physician delivery and an identity-bound acknowledgement (#79, #8
 #128, #130); TLS and least-privilege hosting (#75); and CI-published images with pull-based host
 deploys (#97, #98). A real RIS sign reaches the pipeline through `ris-sign-bridge` (d210810),
 because the o3 module's own emit still fails (#82); that emit carries `basedOn` since lh-radiology
-`2e107c00`, ready for the repair. OpenMRS runs `o3-31e7000a` on a digest-pinned base, and a pin
-bump waits for a green `boot-smoke` on the o3 commit behind the tag (lh-radiology#88, run-book 6a).
+`2e107c00`, ready for the repair. OpenMRS runs `o3-048ef7d6` (lh-radiology!100: the Overview-tab
+critical-results box with a real ack link, #136) on a digest-pinned base, and a pin bump waits for
+a green `boot-smoke` on the o3 commit behind the tag (lh-radiology#88, run-book 6a).
 The whole loop is proven live on the demo host and rehearsed (#76): CAD to pre-sign draft to a real
 RIS sign to verification to ARCHIVED, then restaged.
 **M5 (current) is the EMBED mammography flagship** (#31; mapping in

@@ -183,10 +183,17 @@ origin the #75 Caddy overlay serves. Nothing else is reachable off-box.
    Author, accepting or editing the draft impression → set **Results Interpreter**
    (autocomplete on your own name) → **Complete**, which is the sign.
 5. **The page goes out.** Chart of the ordering patient (`/openmrs`, logged in as the referring
-   physician): the **AI critical result notification** entry is on the chart — finding label +
-   accession + the signed ack link, never the narrative.
-6. **Phone on camera:** tap the ack link
-   (`https://demo.example.org/openmrs/ack/<taskId>?sig=…`). Two taps, by design (!114):
+   physician): the **AI critical result notifications** box at the top of the Overview tab
+   (o3 pin `o3-048ef7d6`, lh-radiology!100, #136) lists the entry — finding label + accession +
+   ack task, with its date and an **Acknowledge** link — never the narrative. The box lists every
+   notification for the patient, newest first. Until the follow-up drops the concept from
+   `dashboard.overview.showConcepts`, the Most Recent Observations widget further down still
+   shows the latest entry as text wrapped in the observation edit link: that one is the #136
+   login loop, so click only the box.
+6. **Phone on camera:** tap **Acknowledge** in the box. The link is
+   `https://demo.example.org/openmrs/ack/<taskId>?sig=…`; the box only ever links an https URL
+   on this host under `/openmrs/ack/`, so an old `/reading-api/ack/` entry shows as text with no
+   link. Two taps, by design (!114):
    the link opens a **confirmation page** naming who the acknowledgement will be attributed
    to, and only the **Acknowledge** button on it attests. Opening the link never acknowledges
    anything, so a preloading browser, a restored tab or a scanner cannot attest on the
@@ -413,8 +420,9 @@ curl -s "$API/pipelines/$P/jobs" | python3 -c 'import sys,json; [print(j["name"]
 ```
 
 The gate is a `boot-smoke success` line. A failed job, or no `boot-smoke` line at all, means no
-pin bump. No commit before lh-radiology `7b05e8b` has a passing `boot-smoke`, so the current pin
-`o3-31e7000a` was cleared by the host test alone. If the job ever fails on time alone while its
+pin bump. No commit before lh-radiology `7b05e8b` has a passing `boot-smoke`, so `o3-31e7000a`
+was cleared by the host test alone; `o3-048ef7d6` (lh-radiology!100, pipeline 2968413834) is the
+first pin that went through this gate. If the job ever fails on time alone while its
 log shows a boot still making progress, that is contention on the shared runner, not drift: raise
 `BOOT_TIMEOUT` in lh-radiology's `.gitlab-ci.yml` rather than distrusting the image. `boot-smoke`
 does not replace the host test below. An empty database proves the image starts; the host test
